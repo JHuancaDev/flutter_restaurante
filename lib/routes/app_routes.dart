@@ -1,0 +1,23 @@
+import 'package:flutter_restaurante/presentation/pages/auth/forgot_password_page.dart';
+import 'package:flutter_restaurante/presentation/pages/auth/login.dart';
+import 'package:flutter_restaurante/presentation/pages/auth/loginregister.dart';
+import 'package:flutter_restaurante/presentation/pages/auth/register_page.dart';
+import 'package:flutter_restaurante/presentation/pages/cart/cart_page.dart';
+import 'package:flutter_restaurante/presentation/pages/products/product_detail_page.dart';
+import 'package:flutter_restaurante/presentation/pages/products/products_page.dart';
+import 'package:flutter_restaurante/presentation/pages/profile/profile_page.dart';
+import 'package:flutter_restaurante/presentation/pages/splash/splash_page.dart';
+import 'package:flutter_restaurante/presentation/pages/widgets/bottom_nav.dart';
+
+final routes = {
+  '/': (context) => const SplashPage(),
+  '/login_or_register': (context) => const LoginOrRegister(),
+  '/login': (context) => const LoginPage(),
+  '/register': (context) => const RegisterPage(),
+  '/forgot-password': (context) => const ForgotPasswordPage(),
+  '/home': (context) => const BottomNavScreen(), // Aquí usamos BottomNavScreen
+  '/products': (context) => const ProductsPage(),
+  '/product-detail': (context) => const ProductDetailPage(),
+  '/cart': (context) => const CartPage(),
+  '/profile': (context) => const ProfilePage(),
+};
