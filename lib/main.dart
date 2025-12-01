@@ -1,7 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_restaurante/data/providers/ai_recommendation_provider.dart';
+import 'package:flutter_restaurante/data/providers/notification_provider.dart';
+import 'package:provider/provider.dart';
+import 'firebase_options.dart';
 import 'package:flutter_restaurante/routes/app_routes.dart';
-void main() {
-  runApp(const MyApp());
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AIRecommendationProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -9,10 +30,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      initialRoute: '', // el inicio sigue siendo "/"
-      routes: routes,
+    return Consumer<NotificationProvider>(
+      builder: (context, notificationProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          initialRoute: '/',
+          routes: routes,
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            visualDensity: VisualDensity.adaptivePlatformDensity,
+          ),
+          // 🔥 CLAVE: Envolver con ScaffoldMessenger usando la key del provider
+          builder: (context, child) {
+            return ScaffoldMessenger(
+              key: notificationProvider.scaffoldMessengerKey,
+              child: child!,
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_restaurante/config/theme.dart';
 import 'package:flutter_restaurante/presentation/pages/cart/cart_page.dart';
-import 'package:flutter_restaurante/presentation/pages/favorites/favorites_page.dart';
 import 'package:flutter_restaurante/presentation/pages/home/home_page.dart';
+import 'package:flutter_restaurante/presentation/pages/products/search_products_page.dart';
 import 'package:flutter_restaurante/presentation/pages/profile/profile_page.dart';
 
 class BottomNavScreen extends StatefulWidget {
@@ -17,7 +17,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
   final List<Widget> _screens = [
     const HomePage(),
-    const FavoritesPage(),
+    const SearchProductsPage(),
     const CartPage(),
     const ProfilePage(),
   ];
@@ -29,7 +29,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.fondoPrimary, AppColors.fondoSecondary],
+            colors: [AppColors.fondoPrimary, AppColors.fondoPrimary],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
@@ -44,7 +44,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           backgroundColor: Colors.transparent,
-          selectedItemColor: AppColors.bottonPrimary,
+          selectedItemColor: AppColors.blanco,
           unselectedItemColor: AppColors.blanco,
           selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.w600,
@@ -84,9 +84,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                       ? AppColors.blancoTransparente
                       : Colors.transparent,
                 ),
-                child: const Icon(Icons.favorite_border, size: 24),
+                child: const Icon(Icons.search, size: 24),
               ),
-              label: "Favoritos",
+              label: "Buscar",
             ),
             BottomNavigationBarItem(
               icon: Container(

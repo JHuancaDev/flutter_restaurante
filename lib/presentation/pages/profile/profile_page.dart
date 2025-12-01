@@ -194,8 +194,43 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Perfil'),
-        backgroundColor: AppColors.bottonPrimary,
+        backgroundColor: AppColors.fondoPrimary,
         foregroundColor: AppColors.blanco,
+      ),
+      endDrawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: AppColors.fondoPrimary),
+              child: Text(
+                "Hola, preciona lo que quieres saber...",
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.home),
+              title: Text("Pedidos"),
+              onTap: () {
+                Navigator.pop(context); // Cierra el menú
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.notifications),
+              title: Text("Notificaciones"),
+              onTap: () {
+                Navigator.pushNamed(context, '/notifications');
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.reviews),
+              title: Text("Mis Ordenes"),
+              onTap: () {
+                Navigator.pushNamed(context, '/my-order');
+              },
+            ),
+          ],
+        ),
       ),
       body: FutureBuilder<User>(
         future: _userFuture,

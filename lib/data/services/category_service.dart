@@ -11,7 +11,6 @@ class CategoryService {
       final data = response.data as List;
       return data.map((json) => Category.fromJson(json)).toList();
     } catch (e) {
-      print("Error cargando categorías: $e");
       return [];
     }
   }

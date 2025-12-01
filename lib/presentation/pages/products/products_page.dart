@@ -4,6 +4,8 @@ import 'package:flutter_restaurante/data/models/product.dart';
 import 'package:flutter_restaurante/data/services/product_service.dart';
 import 'package:flutter_restaurante/data/services/favorite_service.dart';
 import 'package:flutter_restaurante/data/services/token_storage.dart';
+import 'package:flutter_restaurante/presentation/pages/products/product_detail_page.dart';
+import 'package:flutter_restaurante/presentation/pages/products/search_products_page.dart';
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
@@ -33,13 +35,15 @@ class _ProductsPageState extends State<ProductsPage> {
   Future<List<Product>> _loadProducts() async {
     try {
       final products = await _productService.getProductsByCategory(categoryId);
-      
+
       // Verificar estado de favoritos para cada producto
       for (var product in products) {
-        final isFavorite = await _favoriteService.isProductInFavorites(product.id);
+        final isFavorite = await _favoriteService.isProductInFavorites(
+          product.id,
+        );
         _favoriteStatus[product.id] = isFavorite;
       }
-      
+
       return products;
     } catch (e) {
       throw e;
@@ -49,13 +53,13 @@ class _ProductsPageState extends State<ProductsPage> {
   Future<void> _toggleFavorite(Product product) async {
     try {
       final isCurrentlyFavorite = _favoriteStatus[product.id] ?? false;
-      
+
       if (isCurrentlyFavorite) {
         await _favoriteService.removeFavorite(product.id);
         setState(() {
           _favoriteStatus[product.id] = false;
         });
-        
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -70,7 +74,7 @@ class _ProductsPageState extends State<ProductsPage> {
         setState(() {
           _favoriteStatus[product.id] = true;
         });
-        
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -97,7 +101,9 @@ class _ProductsPageState extends State<ProductsPage> {
   void _handleSessionExpired() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Sesión expirada. Por favor, inicia sesión nuevamente.'),
+        content: const Text(
+          'Sesión expirada. Por favor, inicia sesión nuevamente.',
+        ),
         backgroundColor: Colors.orange,
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
@@ -122,21 +128,21 @@ class _ProductsPageState extends State<ProductsPage> {
     final isFavorite = _favoriteStatus[product.id] ?? false;
 
     return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(
+          Navigator.push(
             context,
-            '/product-detail',
-            arguments: product,
+            MaterialPageRoute(
+              builder: (context) => ProductDetailPage(product: product),
+            ),
           );
         },
         child: Stack(
           children: [
+            // En tu AppBar o donde quieras colocar el botón de búsqueda
             Row(
               children: [
                 // Imagen del producto
@@ -188,8 +194,8 @@ class _ProductsPageState extends State<ProductsPage> {
                               Text(
                                 "Stock: ${product.stock}",
                                 style: TextStyle(
-                                  color: product.stock == 0 
-                                      ? Colors.red 
+                                  color: product.stock == 0
+                                      ? Colors.red
                                       : Colors.orange,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
@@ -243,7 +249,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
           if (snapshot.hasError) {
             final error = snapshot.error.toString();
-            
+
             if (error.contains('Sesión expirada')) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _handleSessionExpired();
@@ -264,9 +270,9 @@ class _ProductsPageState extends State<ProductsPage> {
                     const SizedBox(height: 16),
                     Text(
                       'Error al cargar productos',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.red,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(color: Colors.red),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
@@ -300,11 +306,7 @@ class _ProductsPageState extends State<ProductsPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.fastfood,
-                    size: 80,
-                    color: Colors.grey,
-                  ),
+                  const Icon(Icons.fastfood, size: 80, color: Colors.grey),
                   const SizedBox(height: 16),
                   Text(
                     'No hay productos disponibles',

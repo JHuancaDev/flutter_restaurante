@@ -1,16 +1,41 @@
-# flutter_restaurante
+![Logo readme](assets/images/logoReadme.jpg)
 
-A new Flutter project.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+# Aplicación móvil para el cliente del restaurante The Garden Don Miguelón
 
-A few resources to get you started if this is your first Flutter project:
+Aplicación móvil desarrollada en Flutter para los clientes del restaurante The Garden, permitiendo:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Visualizar el menú y sus categorías
+- Realizar pedidos desde la app
+- Reservar mesas
+- Gestionar información de su perfil
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+La app consume APIs del backend para garantizar seguridad y sincronización con la base de datos.
+Incluye autenticación con Google mediante Firebase, y todo el contenido (menú, reservas, usuarios, pedidos, etc.) es administrado desde un panel web de administración.
+
+## Instalacion
+
+#### Clonamos el proyecto
+
+```bash
+git clone https://github.com/JHuancaDev/flutter_restaurante.git
+```
+
+#### Instalamos las dependencias
+
+```bash
+flutter pub get
+```
+
+
+## Requerimientos para correrlo
+- Flutter 3.32.3
+- Dart 3.8.1
+- Android Studio - Emulador movil
+
+## Estructura del proyecto
+
+![estructura readme](assets/images/estructura.png)
+
+

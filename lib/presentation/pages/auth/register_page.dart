@@ -13,9 +13,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
-  final _roleController = TextEditingController(
-    text: "cliente",
-  ); // valor por defecto
+  final _roleController = TextEditingController(text: "cliente");
   bool _loading = false;
 
   final _authService = AuthService();
@@ -43,10 +41,10 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _loading = false);
 
     if (response != null && response.containsKey('email')) {
-      _showSnack("Cuenta creada correctamente ✅");
+      _showSnack("Cuenta creada correctamente");
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-      _showSnack("Error al crear la cuenta ❌");
+      _showSnack("Error al crear la cuenta");
     }
   }
 
@@ -93,8 +91,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
-
-                // Nombre completo
                 TextField(
                   controller: _fullNameController,
                   decoration: InputDecoration(
@@ -113,7 +109,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Email
                 TextField(
                   controller: _emailController,
                   decoration: InputDecoration(
@@ -128,8 +123,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Password
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
@@ -145,8 +138,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Botón Registrar
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
@@ -182,7 +173,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Ir al login
                 TextButton(
                   onPressed: _goToLogin,
                   child: const Text(

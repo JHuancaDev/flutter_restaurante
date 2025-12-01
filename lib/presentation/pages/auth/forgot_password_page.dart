@@ -36,10 +36,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: AppColors.bottonPrimary,
-      ),
+      SnackBar(content: Text(msg), backgroundColor: AppColors.bottonPrimary),
     );
   }
 
@@ -81,7 +78,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       filled: true,
                       fillColor: AppColors.blancoTransparente,
                       hintText: "Correo electrónico",
-                      prefixIcon: const Icon(Icons.email, color: AppColors.negro),
+                      prefixIcon: const Icon(
+                        Icons.email,
+                        color: AppColors.negro,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -99,8 +99,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               ? AppColors.bottonPrimary.withOpacity(0.5)
                               : AppColors.bottonPrimary,
                         ),
-                        foregroundColor:
-                            const WidgetStatePropertyAll(AppColors.blanco),
+                        foregroundColor: const WidgetStatePropertyAll(
+                          AppColors.blanco,
+                        ),
                         shape: WidgetStatePropertyAll(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -115,7 +116,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           : const Text(
                               "Enviar enlace de recuperación",
                               style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w600),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                     ),
                   ),

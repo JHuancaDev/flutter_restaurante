@@ -32,9 +32,24 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Categorías"),
-        backgroundColor: AppColors.bottonPrimary,
+        title: const Text("Bienvenido..."),
+        backgroundColor: AppColors.fondoPrimary,
         foregroundColor: AppColors.blanco,
+        actions: [
+          Text("AI"),
+          IconButton(
+            icon: Icon(Icons.auto_awesome),
+            onPressed: () {
+              Navigator.pushNamed(context, '/ai-recommendations');
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.favorite),
+            onPressed: () {
+              Navigator.pushNamed(context, '/favorite');
+            },
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -48,12 +63,16 @@ class _HomePageState extends State<HomePage> {
           future: _categories,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.blanco));
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.blanco),
+              );
             }
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(
-                child: Text("No hay categorías disponibles",
-                    style: TextStyle(color: AppColors.blanco)),
+                child: Text(
+                  "No hay categorías disponibles",
+                  style: TextStyle(color: AppColors.blanco),
+                ),
               );
             }
 
@@ -88,7 +107,9 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Expanded(
                           child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
                             child: Image.network(
                               category.urlImagen,
                               fit: BoxFit.cover,
@@ -100,11 +121,14 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(category.name,
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.negro)),
+                              Text(
+                                category.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.negro,
+                                ),
+                              ),
                               const SizedBox(height: 4),
                               Text(
                                 category.description,
@@ -117,7 +141,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),

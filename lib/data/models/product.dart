@@ -21,14 +21,14 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      price: (json['price'] as num).toDouble(),
-      imageUrl: json['image_url'],
-      stock: json['stock'],
-      categoryId: json['category_id'],
-      isAvailable: json['is_available'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      price: (json['price'] ?? 0 as num).toDouble(),
+      imageUrl: json['image_url'] ?? '',
+      stock: json['stock'] ?? 0,
+      categoryId: json['category_id'] ?? 0,
+      isAvailable: json['is_available'] ?? false,
     );
   }
 }

@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_restaurante/config/theme.dart';
-import 'package:flutter_restaurante/data/models/cart_item.dart';
 import 'package:flutter_restaurante/data/models/product.dart';
+import 'package:flutter_restaurante/data/models/review.dart';
+import 'package:flutter_restaurante/data/providers/ai_recommendation_provider.dart';
 import 'package:flutter_restaurante/data/services/cart_service.dart';
 import 'package:flutter_restaurante/data/services/favorite_service.dart';
+import 'package:flutter_restaurante/data/services/review_service.dart';
 import 'package:flutter_restaurante/data/services/token_storage.dart';
+import 'package:flutter_restaurante/presentation/pages/widgets/add_review_dialog.dart';
+import 'package:flutter_restaurante/presentation/pages/widgets/rating_stars.dart';
+import 'package:flutter_restaurante/presentation/pages/widgets/review_card.dart';
+import 'package:provider/provider.dart';
 
 class ProductDetailPage extends StatefulWidget {
-  const ProductDetailPage({super.key});
+  final Product product;
+
+  const ProductDetailPage({super.key, required this.product});
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -16,16 +24,31 @@ class ProductDetailPage extends StatefulWidget {
 class _ProductDetailPageState extends State<ProductDetailPage> {
   final CartService _cartService = CartService();
   final FavoriteService _favoriteService = FavoriteService();
+  final ReviewService _reviewService = ReviewService();
   final TokenStorage _tokenStorage = TokenStorage();
+
   late Product product;
   bool _isFavorite = false;
   bool _isLoadingFavorite = false;
 
+  // Variables para reseñas
+  List<Review> _reviews = [];
+  ReviewStats _stats = ReviewStats(totalReviews: 0, averageRating: 0);
+  bool _isLoadingReviews = false;
+  bool _hasReviewError = false;
+
   @override
   void initState() {
     super.initState();
-    product = ModalRoute.of(context)!.settings.arguments as Product;
+    product = widget.product;
     _checkFavoriteStatus();
+    _loadReviews();
+
+    // Tracking de vista de producto - después del build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<AIRecommendationProvider>();
+      provider.trackProductView(product.id);
+    });
   }
 
   Future<void> _checkFavoriteStatus() async {
@@ -33,8 +56,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       setState(() {
         _isLoadingFavorite = true;
       });
-      
-      final isFavorite = await _favoriteService.isProductInFavorites(product.id);
+
+      final isFavorite = await _favoriteService.isProductInFavorites(
+        product.id,
+      );
       setState(() {
         _isFavorite = isFavorite;
         _isLoadingFavorite = false;
@@ -43,6 +68,31 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       setState(() {
         _isLoadingFavorite = false;
       });
+      print('Error checking favorite status: $e');
+    }
+  }
+
+  Future<void> _loadReviews() async {
+    try {
+      setState(() {
+        _isLoadingReviews = true;
+        _hasReviewError = false;
+      });
+
+      final reviews = await _reviewService.getProductReviews(product.id);
+      final stats = await _reviewService.getProductStats(product.id);
+
+      setState(() {
+        _reviews = reviews;
+        _stats = stats;
+        _isLoadingReviews = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingReviews = false;
+        _hasReviewError = true;
+      });
+      print('Error loading reviews: $e');
     }
   }
 
@@ -57,7 +107,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         setState(() {
           _isFavorite = false;
         });
-        
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -72,7 +122,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         setState(() {
           _isFavorite = true;
         });
-        
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -83,7 +133,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           );
         }
       }
+      context.read<AIRecommendationProvider>().trackFavorite(product.id);
     } catch (e) {
+      print('Error toggling favorite: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -102,17 +154,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Future<void> _addToCart() async {
     try {
-      await _cartService.loadCart();
+      await _cartService.addToCart(product.id, 1);
 
-      final cartItem = CartItem(
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        imageUrl: product.imageUrl,
-      );
-
-      await _cartService.addToCart(cartItem);
+      context.read<AIRecommendationProvider>().trackPurchase(product.id);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -123,6 +167,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         );
       }
     } catch (e) {
+      print('Error adding to cart: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -130,6 +175,38 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _showAddReviewDialog() async {
+    final result = await showDialog<ReviewCreate>(
+      context: context,
+      builder: (context) => AddReviewDialog(productId: product.id),
+    );
+
+    if (result != null && context.mounted) {
+      try {
+        await _reviewService.createReview(result);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Reseña enviada correctamente ✅'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        // Recargar reseñas
+        _loadReviews();
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al enviar reseña: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -142,10 +219,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           const SizedBox(width: 4),
           Text(
             "Agotado",
-            style: TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
           ),
         ],
       );
@@ -156,10 +230,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           const SizedBox(width: 4),
           Text(
             "Últimas ${product.stock} unidades",
-            style: TextStyle(
-              color: Colors.orange,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
           ),
         ],
       );
@@ -175,6 +246,203 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       );
     }
+  }
+
+  Widget _buildRatingSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Para pantallas pequeñas, usar columna en lugar de fila
+          if (MediaQuery.of(context).size.width < 400)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildRatingInfo(),
+                const SizedBox(height: 12),
+                _buildReviewButton(),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _buildRatingInfo()),
+                const SizedBox(width: 12),
+                _buildReviewButton(),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Calificación del producto',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            RatingStars(rating: _stats.averageRating, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '${_stats.averageRating.toStringAsFixed(1)}/5.0',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${_stats.totalReviews} ${_stats.totalReviews == 1 ? 'reseña' : 'reseñas'}',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewButton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        ElevatedButton.icon(
+          onPressed: _showAddReviewDialog,
+          icon: const Icon(Icons.rate_review, size: 16),
+          label: const Text('Escribir reseña'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.bottonPrimary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewsList() {
+    if (_isLoadingReviews) {
+      return const Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.bottonPrimary),
+        ),
+      );
+    }
+
+    if (_hasReviewError) {
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline, size: 50, color: Colors.grey),
+            const SizedBox(height: 10),
+            const Text(
+              'Error al cargar reseñas',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _loadReviews,
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_reviews.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const Icon(Icons.reviews, size: 50, color: Colors.grey),
+            const SizedBox(height: 10),
+            const Text(
+              'Aún no hay reseñas',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              'Sé el primero en opinar sobre este producto',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(Icons.reviews, color: AppColors.bottonPrimary),
+              const SizedBox(width: 8),
+              Text(
+                'Reseñas (${_reviews.length})',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        ListView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          itemCount: _reviews.length,
+          itemBuilder: (context, index) {
+            return ReviewCard(
+              review: _reviews[index],
+              onDelete: () async {
+                try {
+                  await _reviewService.deleteReview(_reviews[index].id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Reseña eliminada correctamente'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                  _loadReviews();
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al eliminar reseña: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+            );
+          },
+        ),
+      ],
+    );
   }
 
   @override
@@ -197,7 +465,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   )
                 : Icon(
                     _isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: _isFavorite ? AppColors.bottonSecundary : AppColors.blanco,
+                    color: _isFavorite
+                        ? AppColors.bottonSecundary
+                        : AppColors.blanco,
                   ),
             onPressed: _isLoadingFavorite ? null : _toggleFavorite,
           ),
@@ -262,10 +532,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   // Descripción
                   const Text(
                     "Descripción:",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -288,8 +555,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     child: ElevatedButton(
                       onPressed: product.stock > 0 ? _addToCart : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: product.stock > 0 
-                            ? AppColors.bottonPrimary 
+                        backgroundColor: product.stock > 0
+                            ? AppColors.bottonPrimary
                             : Colors.grey,
                         foregroundColor: AppColors.blanco,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -298,8 +565,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ),
                       ),
                       child: Text(
-                        product.stock > 0 
-                            ? "Agregar al carrito" 
+                        product.stock > 0
+                            ? "Agregar al carrito"
                             : "Producto agotado",
                         style: const TextStyle(fontSize: 16),
                       ),
@@ -315,7 +582,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         onPressed: _isLoadingFavorite ? null : _toggleFavorite,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.bottonSecundary,
-                          side: const BorderSide(color: AppColors.bottonSecundary),
+                          side: const BorderSide(
+                            color: AppColors.bottonSecundary,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -328,7 +597,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                      AppColors.bottonSecundary),
+                                    AppColors.bottonSecundary,
+                                  ),
                                 ),
                               )
                             : const Row(
@@ -347,6 +617,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Sección de reseñas
+            _buildRatingSection(),
+            _buildReviewsList(),
             const SizedBox(height: 20),
           ],
         ),

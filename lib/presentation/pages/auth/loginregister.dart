@@ -24,65 +24,52 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
     });
 
     try {
-      // 1. Iniciar sesión con Google
-      final googleUser = await _googleSignInService.signIn();
-      
-      if (googleUser != null) {
-        // 2. Obtener tokens de autenticación
-        final googleAuth = await googleUser.authentication;
-        final idToken = googleAuth.idToken;
+      print('🟡 Iniciando proceso de login con Google...');
 
-        if (idToken != null) {
-          // 3. Enviar token a tu backend
-          final result = await _authService.loginWithGoogle(idToken);
-          
-          if (result != null) {
-            // 4. Navegar a la página principal
-            if (mounted) {
-              Navigator.pushReplacementNamed(context, '/home');
-              
-              // Mostrar mensaje de éxito
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    result['is_new_user'] 
-                      ? '¡Bienvenido! Cuenta creada exitosamente'
-                      : '¡Bienvenido de vuelta!',
-                    style: const TextStyle(color: AppColors.blanco),
-                  ),
-                  backgroundColor: AppColors.bottonPrimary,
-                ),
-              );
-            }
-          } else {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Error al iniciar sesión con Google'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('No se pudo obtener el token de Google'),
-                backgroundColor: Colors.red,
+      // 1. Iniciar sesión con Google y Firebase
+      final googleData = await _googleSignInService.signIn();
+
+      if (googleData != null && googleData['idToken'] != null) {
+        final idToken = googleData['idToken']!;
+        final email = googleData['email'] ?? 'No email';
+        final uid = googleData['uid'] ?? 'No UID';
+
+        final result = await _authService.loginWithGoogle(idToken);
+
+        if (mounted) {
+          // 3. Navegar a la página principal
+          Navigator.pushReplacementNamed(context, '/home');
+
+          // 4. Mostrar mensaje de éxito
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result['is_new_user']
+                    ? '¡Bienvenido! Cuenta creada exitosamente'
+                    : '¡Bienvenido de vuelta!',
+                style: const TextStyle(color: AppColors.blanco),
               ),
-            );
-          }
+              backgroundColor: AppColors.bottonPrimary,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No se pudo completar el inicio de sesión con Google',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     } catch (error) {
-      print('Error en login con Google: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $error'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -145,27 +132,38 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 10),
+
+                  // SUBTÍTULO
+                  const Text(
+                    "Inicia sesión para continuar",
+                    style: TextStyle(
+                      color: AppColors.blanco,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                   const SizedBox(height: 40),
 
                   // BOTÓN GOOGLE
                   SizedBox(
                     width: double.infinity,
-                    child: TextButton(
+                    child: ElevatedButton(
                       onPressed: _isLoading ? null : _onGooglePressed,
-                      style: ButtonStyle(
-                        backgroundColor: const WidgetStatePropertyAll(
-                          AppColors.bottonGoogle,
-                        ),
-                        side: const WidgetStatePropertyAll(
-                          BorderSide(color: AppColors.borderButton, width: 1),
-                        ),
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.blanco,
+                        foregroundColor: AppColors.negro,
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(
+                            color: AppColors.borderButton,
+                            width: 1,
                           ),
                         ),
-                        padding: const WidgetStatePropertyAll(
-                          EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 20,
                         ),
                       ),
                       child: _isLoading
@@ -175,21 +173,22 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.negro),
+                                  AppColors.negro,
+                                ),
                               ),
                             )
-                          : const Row(
+                          : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Image(
-                                  image: AssetImage('assets/images/LOGO.png'), // Asegúrate de tener este icono
-                                  width: 22,
+                                Image.asset(
+                                  'assets/images/',
+                                  width: 24,
+                                  height: 24,
                                 ),
-                                SizedBox(width: 10),
-                                Text(
+                                const SizedBox(width: 12),
+                                const Text(
                                   "Continuar con Google",
                                   style: TextStyle(
-                                    color: AppColors.negro,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 16,
                                   ),
@@ -198,31 +197,53 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
+
+                  // DIVIDER
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: AppColors.blanco.withOpacity(0.3),
+                          thickness: 1,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          "O",
+                          style: TextStyle(
+                            color: AppColors.blanco.withOpacity(0.7),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: AppColors.blanco.withOpacity(0.3),
+                          thickness: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
 
                   // BOTÓN LOGIN
                   SizedBox(
                     width: double.infinity,
-                    child: TextButton(
+                    child: ElevatedButton(
                       onPressed: _isLoading ? null : _onLoginPressed,
-                      style: ButtonStyle(
-                        backgroundColor: const WidgetStatePropertyAll(
-                          AppColors.bottonPrimary,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.bottonPrimary,
+                        foregroundColor: AppColors.blanco,
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        foregroundColor: const WidgetStatePropertyAll(
-                          AppColors.blanco,
-                        ),
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        padding: const WidgetStatePropertyAll(
-                          EdgeInsets.symmetric(vertical: 14),
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: const Text(
-                        "Iniciar Sesión",
+                        "Iniciar Sesión con Email",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -235,26 +256,21 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
                   // BOTÓN REGISTRO
                   SizedBox(
                     width: double.infinity,
-                    child: TextButton(
+                    child: OutlinedButton(
                       onPressed: _isLoading ? null : _onRegisterPressed,
-                      style: ButtonStyle(
-                        backgroundColor: const WidgetStatePropertyAll(
-                          AppColors.bottonSecundary,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.blanco,
+                        side: const BorderSide(
+                          color: AppColors.blanco,
+                          width: 2,
                         ),
-                        foregroundColor: const WidgetStatePropertyAll(
-                          AppColors.blanco,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        padding: const WidgetStatePropertyAll(
-                          EdgeInsets.symmetric(vertical: 14),
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: const Text(
-                        "Crear Cuenta",
+                        "Crear Cuenta Nueva",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -265,16 +281,16 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
 
                   const SizedBox(height: 40),
 
-                  // OLVIDÉ CONTRASEÑA
-                  TextButton(
-                    onPressed: _isLoading ? null : () {},
-                    child: const Text(
-                      "¿Olvidaste tu contraseña?",
+                  // TÉRMINOS Y CONDICIONES
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      "Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: AppColors.blanco,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        decoration: TextDecoration.underline,
+                        color: AppColors.blanco.withOpacity(0.7),
+                        fontSize: 12,
+                        height: 1.4,
                       ),
                     ),
                   ),
