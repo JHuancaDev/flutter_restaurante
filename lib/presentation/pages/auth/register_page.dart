@@ -42,7 +42,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (response != null && response.containsKey('email')) {
       _showSnack("Cuenta creada correctamente");
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/login');
     } else {
       _showSnack("Error al crear la cuenta");
     }

@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_restaurante/data/models/extra.dart';
 import 'package:flutter_restaurante/data/models/order.dart';
+import 'package:flutter_restaurante/data/services/extra_service.dart';
 import 'package:flutter_restaurante/data/services/token_storage.dart';
 import 'package:flutter_restaurante/config/environment.dart';
 
@@ -96,5 +98,14 @@ class OrderService {
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
+  }
+
+  Future<List<OrderExtra>> addExtrasToOrder(
+    int orderId,
+    List<Map<String, dynamic>> extras,
+  ) async {
+    // Esto sería un método auxiliar que usa ExtraService
+    final ExtraService extraService = ExtraService();
+    return await extraService.addExtrasToOrder(orderId, extras);
   }
 }

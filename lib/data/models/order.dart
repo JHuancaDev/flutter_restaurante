@@ -1,3 +1,5 @@
+import 'package:flutter_restaurante/data/models/extra.dart';
+
 class Order {
   final int id;
   final int userId;
@@ -11,6 +13,7 @@ class Order {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<OrderItem> items;
+  final List<OrderExtra> extras;
   final int? tableNumber;
   final int? tableCapacity;
   final String userName;
@@ -28,6 +31,7 @@ class Order {
     required this.createdAt,
     required this.updatedAt,
     required this.items,
+    required this.extras,
     this.tableNumber,
     this.tableCapacity,
     required this.userName,
@@ -52,6 +56,9 @@ class Order {
           : DateTime.now(),
       items: (json['items'] as List? ?? [])
           .map((item) => OrderItem.fromJson(item))
+          .toList(),
+      extras: (json['extras'] as List? ?? []) // ✅ AGREGAR esta línea
+          .map((extra) => OrderExtra.fromJson(extra))
           .toList(),
       tableNumber: json['table_number'],
       tableCapacity: json['table_capacity'],

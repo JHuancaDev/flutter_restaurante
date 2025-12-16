@@ -296,7 +296,7 @@ class _SearchProductsPageState extends State<SearchProductsPage> {
           autofocus: true,
         ),
         backgroundColor: AppColors.fondoPrimary,
-        foregroundColor: AppColors.blanco,
+        foregroundColor: AppColors.borderButton,
         actions: [
           if (_isSearching)
             const Padding(

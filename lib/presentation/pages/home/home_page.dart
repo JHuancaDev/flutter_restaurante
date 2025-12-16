@@ -36,11 +36,10 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: AppColors.fondoPrimary,
         foregroundColor: AppColors.blanco,
         actions: [
-          Text("AI"),
           IconButton(
-            icon: Icon(Icons.auto_awesome),
+            icon: Icon(Icons.developer_board),
             onPressed: () {
-              Navigator.pushNamed(context, '/ai-recommendations');
+              Navigator.pushNamed(context, '/my-order');
             },
           ),
           IconButton(

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_restaurante/config/theme.dart';
 import 'package:flutter_restaurante/data/models/product.dart';
-import 'package:flutter_restaurante/data/providers/ai_recommendation_provider.dart';
 import 'package:flutter_restaurante/presentation/pages/products/product_detail_page.dart';
 
 class SmartProductCard extends StatelessWidget {
@@ -28,7 +27,7 @@ class SmartProductCard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           // Tracking automático de vista
-          context.read<AIRecommendationProvider>().trackProductView(product.id);
+    
           
           if (onTap != null) {
             onTap!();

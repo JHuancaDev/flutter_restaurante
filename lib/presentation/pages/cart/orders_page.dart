@@ -113,206 +113,212 @@ class _OrdersPageState extends State<OrdersPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.red,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Error al cargar pedidos',
-                        style: TextStyle(fontSize: 18, color: Colors.red),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        _errorMessage,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadOrders,
-                        child: Text('Reintentar'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    'Error al cargar pedidos',
+                    style: TextStyle(fontSize: 18, color: Colors.red),
                   ),
-                )
-              : _orders.isEmpty
-                  ? const Center(
+                  SizedBox(height: 8),
+                  Text(
+                    _errorMessage,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadOrders,
+                    child: Text('Reintentar'),
+                  ),
+                ],
+              ),
+            )
+          : _orders.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.receipt_long, size: 80, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No tienes pedidos',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Los pedidos que realices aparecerán aquí',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadOrders,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: _orders.length,
+                itemBuilder: (context, index) {
+                  final order = _orders[index];
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.receipt_long,
-                            size: 80,
-                            color: Colors.grey,
+                          // Header con número de orden y estado
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Orden #${order.id}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Chip(
+                                label: Text(
+                                  _getStatusText(order.status),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                backgroundColor: _getStatusColor(order.status),
+                                avatar: Icon(
+                                  _getStatusIcon(order.status),
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 16),
-                          Text(
-                            'No tienes pedidos',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          const SizedBox(height: 8),
+
+                          // Información de la orden
+                          Row(
+                            children: [
+                              Icon(
+                                order.orderType == 'dine_in'
+                                    ? Icons.restaurant
+                                    : Icons.delivery_dining,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                order.orderType == 'dine_in'
+                                    ? 'Comer en local'
+                                    : 'Delivery',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                              if (order.orderType == 'dine_in' &&
+                                  order.tableNumber != null) ...[
+                                const SizedBox(width: 16),
+                                Icon(
+                                  Icons.table_restaurant,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Mesa ${order.tableNumber}',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ],
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Los pedidos que realices aparecerán aquí',
-                            style: TextStyle(color: Colors.grey),
+                          const SizedBox(height: 8),
+
+                          // Items de la orden
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Productos:',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              ...order.items.map(
+                                (item) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 2,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        '• ${item.productName}',
+                                        style: TextStyle(fontSize: 14),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        'x${item.quantity}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Mostrar extras
+                              if (order.extras.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  spacing: 4,
+                                  runSpacing: 2,
+                                  children: order.extras.map((extra) {
+                                    return Chip(
+                                      label: Text(
+                                        '${extra.quantity}x ${extra.extraName}',
+                                      ),
+                                      backgroundColor: Colors.blue[50],
+                                      labelStyle: const TextStyle(fontSize: 10),
+                                      visualDensity: VisualDensity.compact,
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Total y fecha
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Total: S/. ${order.totalAmount.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                _formatDate(order.createdAt),
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadOrders,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _orders.length,
-                        itemBuilder: (context, index) {
-                          final order = _orders[index];
-                          return Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Header con número de orden y estado
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Orden #${order.id}',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Chip(
-                                        label: Text(
-                                          _getStatusText(order.status),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        backgroundColor:
-                                            _getStatusColor(order.status),
-                                        avatar: Icon(
-                                          _getStatusIcon(order.status),
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  
-                                  // Información de la orden
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        order.orderType == 'dine_in'
-                                            ? Icons.restaurant
-                                            : Icons.delivery_dining,
-                                        size: 16,
-                                        color: Colors.grey,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        order.orderType == 'dine_in'
-                                            ? 'Comer en local'
-                                            : 'Delivery',
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                      if (order.orderType == 'dine_in' &&
-                                          order.tableNumber != null) ...[
-                                        const SizedBox(width: 16),
-                                        Icon(
-                                          Icons.table_restaurant,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Mesa ${order.tableNumber}',
-                                          style: TextStyle(color: Colors.grey),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  
-                                  // Items de la orden
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Productos:',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      ...order.items.map((item) => Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 2),
-                                            child: Row(
-                                              children: [
-                                                Text(
-                                                  '• ${item.productName}',
-                                                  style: TextStyle(
-                                                      fontSize: 14),
-                                                ),
-                                                const Spacer(),
-                                                Text(
-                                                  'x${item.quantity}',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          )),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  
-                                  // Total y fecha
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Total: S/. ${order.totalAmount.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      Text(
-                                        _formatDate(order.createdAt),
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
                     ),
+                  );
+                },
+              ),
+            ),
     );
   }
 

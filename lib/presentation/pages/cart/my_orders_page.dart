@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_restaurante/config/theme.dart';
 import 'package:flutter_restaurante/data/models/order.dart';
 import 'package:flutter_restaurante/data/services/order_service.dart';
+import 'package:flutter_restaurante/presentation/pages/cart/order_extras_page.dart';
 
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
@@ -99,13 +100,14 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _getStatusColor(order.status).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _getStatusColor(order.status),
-                    ),
+                    border: Border.all(color: _getStatusColor(order.status)),
                   ),
                   child: Text(
                     _getStatusText(order.status),
@@ -125,9 +127,9 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             Row(
               children: [
                 Icon(
-                  order.orderType == 'dine_in' 
-                    ? Icons.restaurant 
-                    : Icons.delivery_dining,
+                  order.orderType == 'dine_in'
+                      ? Icons.restaurant
+                      : Icons.delivery_dining,
                   size: 16,
                   color: Colors.grey,
                 ),
@@ -137,11 +139,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   style: const TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(width: 16),
-                Icon(
-                  Icons.calendar_today,
-                  size: 16,
-                  color: Colors.grey,
-                ),
+                Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
                   '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
@@ -156,7 +154,11 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             if (order.orderType == 'dine_in' && order.tableNumber != null)
               Row(
                 children: [
-                  const Icon(Icons.table_restaurant, size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.table_restaurant,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Mesa ${order.tableNumber}',
@@ -170,6 +172,21 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 ],
               ),
 
+            if (order.extras.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 4,
+                runSpacing: 2,
+                children: order.extras.map((extra) {
+                  return Chip(
+                    label: Text('${extra.quantity}x ${extra.extraName}'),
+                    backgroundColor: Colors.blue[50],
+                    labelStyle: const TextStyle(fontSize: 10),
+                    visualDensity: VisualDensity.compact,
+                  );
+                }).toList(),
+              ),
+            ],
             // Dirección (si es delivery)
             if (order.orderType == 'delivery' && order.deliveryAddress != null)
               Row(
@@ -193,39 +210,90 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             // Items de la orden
             Text(
               'Productos (${order.items.length}):',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(height: 8),
-            ...order.items.take(3).map((item) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${item.quantity}x ${item.productName}',
-                      style: const TextStyle(fontSize: 14),
+            ...order.items
+                .take(3)
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${item.quantity}x ${item.productName}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                        Text(
+                          '\$${item.subtotal.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    '\$${item.subtotal.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+                ),
+
+            // Mostrar extras si existen
+            if (order.extras.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Extras:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
-            )),
+              ...order.extras.map(
+                (extra) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${extra.quantity}x ${extra.extraName}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      Text(
+                        'S/. ${extra.subtotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            // ✅ EL BOTÓN DEBE ESTAR AQUÍ, NO DENTRO DEL MAP
+            if (order.status != 'completado' &&
+                order.status != 'entregado') ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.add_circle_outline, size: 16),
+                label: const Text('Añadir extras'),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OrderExtrasPage(order: order),
+                    ),
+                  ).then((success) {
+                    if (success == true) {
+                      _refreshOrders();
+                    }
+                  });
+                },
+              ),
+            ],
             if (order.items.length > 3)
               Text(
                 '... y ${order.items.length - 3} productos más',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
 
             const SizedBox(height: 12),
@@ -242,10 +310,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 children: [
                   const Text(
                     'Total:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   Text(
                     '\$${order.totalAmount.toStringAsFixed(2)}',
@@ -260,7 +325,8 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             ),
 
             // Instrucciones especiales
-            if (order.specialInstructions != null && order.specialInstructions!.isNotEmpty)
+            if (order.specialInstructions != null &&
+                order.specialInstructions!.isNotEmpty)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -275,10 +341,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   ),
                   Text(
                     order.specialInstructions!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
@@ -293,11 +356,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.receipt_long,
-            size: 80,
-            color: Colors.grey[300],
-          ),
+          Icon(Icons.receipt_long, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
           const Text(
             'No tienes órdenes aún',
@@ -311,9 +370,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           const Text(
             'Cuando hagas un pedido, aparecerá aquí',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey,
-            ),
+            style: TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 20),
           ElevatedButton(

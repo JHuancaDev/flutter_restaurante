@@ -5,6 +5,7 @@ import 'package:flutter_restaurante/data/services/user_service.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:flutter_restaurante/data/services/token_storage.dart';
+import 'package:flutter_restaurante/config/environment.dart';
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
@@ -41,7 +42,7 @@ class WebSocketService {
       }
 
       final wsUrl =
-          'ws://192.168.101.12:8000/ws/client?user_id=$userId&token=$token';
+          '${Environment.apiwsUrl}/ws/client?user_id=$userId&token=$token';
 
       _updateConnectionStatus('connecting');
 

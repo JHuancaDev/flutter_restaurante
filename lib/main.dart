@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_restaurante/data/providers/ai_recommendation_provider.dart';
 import 'package:flutter_restaurante/data/providers/notification_provider.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
@@ -17,7 +16,6 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AIRecommendationProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: const MyApp(),
@@ -40,7 +38,6 @@ class MyApp extends StatelessWidget {
             primarySwatch: Colors.blue,
             visualDensity: VisualDensity.adaptivePlatformDensity,
           ),
-          // 🔥 CLAVE: Envolver con ScaffoldMessenger usando la key del provider
           builder: (context, child) {
             return ScaffoldMessenger(
               key: notificationProvider.scaffoldMessengerKey,

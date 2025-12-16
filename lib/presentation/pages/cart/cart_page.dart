@@ -5,6 +5,7 @@ import 'package:flutter_restaurante/data/models/order.dart';
 import 'package:flutter_restaurante/data/services/cart_service.dart';
 import 'package:flutter_restaurante/presentation/pages/payment/payment_method_dialog.dart';
 import 'package:flutter_restaurante/presentation/pages/cart/orders_page.dart';
+import 'package:flutter_restaurante/presentation/pages/cart/order_extras_page.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -273,9 +274,6 @@ class _CartPageState extends State<CartPage> {
           children: [
             Text('N° de Pedido: #${order.id}'),
             Text('Total: S/. ${order.totalAmount.toStringAsFixed(2)}'),
-            Text(
-              'Método: ${_getPaymentMethodText(order.orderType == 'dine_in' ? 'cash' : 'cash')}',
-            ),
             if (isDineIn && order.tableNumber != null)
               Text('Mesa: ${order.tableNumber}'),
             Text('Estado: ${_getStatusText(order.status)}'),
@@ -292,13 +290,25 @@ class _CartPageState extends State<CartPage> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => OrdersPage()),
               );
             },
             child: Text('Ver Mis Pedidos'),
+          ),
+          // ✅ AGREGAR el botón de extras aquí:
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OrderExtrasPage(order: order),
+                ),
+              );
+            },
+            child: Text('Añadir Extras'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),

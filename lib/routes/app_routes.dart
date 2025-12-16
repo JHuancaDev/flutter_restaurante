@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_restaurante/data/models/product.dart';
-import 'package:flutter_restaurante/presentation/pages/ai/recommendations_page.dart';
 import 'package:flutter_restaurante/presentation/pages/auth/forgot_password_page.dart';
 import 'package:flutter_restaurante/presentation/pages/auth/login.dart';
 import 'package:flutter_restaurante/presentation/pages/auth/loginregister.dart';
@@ -31,6 +30,5 @@ final routes = {
   '/profile': (context) => const ProfilePage(),
   '/favorite': (context) => const FavoritesPage(),
   '/my-order': (context) => const MyOrdersPage(),
-  '/ai-recommendations': (context) => const RecommendationsPage(),
   '/notifications': (context) => const NotificationsPage(),
 };

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_restaurante/config/theme.dart';
 import 'package:flutter_restaurante/data/models/product.dart';
 import 'package:flutter_restaurante/data/models/review.dart';
-import 'package:flutter_restaurante/data/providers/ai_recommendation_provider.dart';
 import 'package:flutter_restaurante/data/services/cart_service.dart';
 import 'package:flutter_restaurante/data/services/favorite_service.dart';
 import 'package:flutter_restaurante/data/services/review_service.dart';
@@ -10,7 +9,6 @@ import 'package:flutter_restaurante/data/services/token_storage.dart';
 import 'package:flutter_restaurante/presentation/pages/widgets/add_review_dialog.dart';
 import 'package:flutter_restaurante/presentation/pages/widgets/rating_stars.dart';
 import 'package:flutter_restaurante/presentation/pages/widgets/review_card.dart';
-import 'package:provider/provider.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -37,6 +35,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _isLoadingReviews = false;
   bool _hasReviewError = false;
 
+  // Variables para IA
+  bool _isLoadingSimilar = false;
+  List<Product> _similarProducts = [];
+
   @override
   void initState() {
     super.initState();
@@ -46,8 +48,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     // Tracking de vista de producto - después del build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<AIRecommendationProvider>();
-      provider.trackProductView(product.id);
+      // Cargar productos similares después de un breve delay
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _loadSimilarProducts();
+      });
     });
   }
 
@@ -96,6 +100,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
+  Future<void> _loadSimilarProducts() async {
+    try {
+      setState(() {
+        _isLoadingSimilar = true;
+      });
+
+      // Esperar un momento para que se actualice el provider
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      setState(() {
+        _isLoadingSimilar = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingSimilar = false;
+      });
+      print('Error loading similar products: $e');
+    }
+  }
+
   Future<void> _toggleFavorite() async {
     try {
       setState(() {
@@ -133,7 +157,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           );
         }
       }
-      context.read<AIRecommendationProvider>().trackFavorite(product.id);
     } catch (e) {
       print('Error toggling favorite: $e');
       if (context.mounted) {
@@ -155,8 +178,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Future<void> _addToCart() async {
     try {
       await _cartService.addToCart(product.id, 1);
-
-      context.read<AIRecommendationProvider>().trackPurchase(product.id);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -188,6 +209,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (result != null && context.mounted) {
       try {
         await _reviewService.createReview(result);
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -246,6 +268,30 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       );
     }
+  }
+
+
+  Widget _buildInfoItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: color,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildRatingSection() {
@@ -470,6 +516,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         : AppColors.blanco,
                   ),
             onPressed: _isLoadingFavorite ? null : _toggleFavorite,
+            tooltip: _isFavorite
+                ? 'Quitar de favoritos'
+                : 'Agregar a favoritos',
           ),
         ],
       ),
@@ -481,19 +530,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             SizedBox(
               width: double.infinity,
               height: 250,
-              child: Image.network(
-                product.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.fondoSecondary,
-                    child: const Icon(
-                      Icons.fastfood,
-                      size: 80,
-                      color: AppColors.bottonPrimary,
-                    ),
-                  );
-                },
+              child: Stack(
+                children: [
+                  Image.network(
+                    product.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: AppColors.fondoSecondary,
+                        child: const Icon(
+                          Icons.fastfood,
+                          size: 80,
+                          color: AppColors.bottonPrimary,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -505,12 +558,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Nombre
-                  Text(
-                    product.name,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
 

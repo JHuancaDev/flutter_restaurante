@@ -49,8 +49,8 @@ class AuthService {
 
       return data;
     } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
+      return {"error": true, "message": _handleAuthError(e)};
+    } 
   }
 
   Future<Map<String, dynamic>?> register({

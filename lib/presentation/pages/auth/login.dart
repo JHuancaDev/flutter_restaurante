@@ -167,18 +167,17 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Botón Olvidé mi contraseña
                   TextButton(
-                    onPressed: _goToForgotPassword,
-                    child: const Text(
-                      "¿Olvidaste tu contraseña?",
-                      style: TextStyle(
-                        color: AppColors.blanco,
-                        fontSize: 15,
-                        decoration: TextDecoration.underline,
-                      ),
+                  onPressed: _goToRegister,
+                  child: const Text(
+                    "No tienes cuenta? Crea una",
+                    style: TextStyle(
+                      color: AppColors.blanco,
+                      fontSize: 15,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
+                ),
                 ],
               ),
             ),
@@ -187,4 +186,9 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+
+  void _goToRegister() {
+    Navigator.pushReplacementNamed(context, '/register');
+  }
 }
+
